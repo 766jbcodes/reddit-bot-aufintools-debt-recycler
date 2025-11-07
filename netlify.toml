@@ -3,17 +3,8 @@
   functions = "netlify/functions"
 
 [functions]
-  included_files = ["*.py", "requirements.txt", "**/*.py", "**/requirements.txt"]
+  included_files = ["*.js", "package.json", "package-lock.json", "**/*.js"]
   node_bundler = "esbuild"
 
-# Python runtime configuration for the handler
-[functions."reddit-bot-handler"]
-  runtime = "python3.11"
-  
-# Also configure the .py file directly
-[functions."reddit-bot-handler.py"]
-  runtime = "python3.11"
-
-# Note: reddit-bot.js is a JavaScript scheduled function that calls the Python handler via HTTP
-# The Python handler (reddit-bot-handler) executes the actual bot logic
+# Note: reddit-bot.js is a JavaScript scheduled function that runs the bot logic directly
 

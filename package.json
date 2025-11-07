@@ -2,12 +2,18 @@
   "name": "reddit-debt-recycling-bot",
   "version": "1.0.0",
   "description": "Automated Reddit bot for debt recycling discussions",
-  "main": "bot.py",
+  "main": "netlify/functions/reddit-bot.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "@netlify/functions": "^2.4.0"
+    "@netlify/functions": "^2.4.0",
+    "@google/generative-ai": "^0.21.0",
+    "googleapis": "^144.0.0",
+    "google-auth-library": "^9.0.0",
+    "snoowrap": "^1.23.0",
+    "better-sqlite3": "^11.6.0",
+    "cheerio": "^1.0.0"
   },
   "keywords": [
     "reddit",
