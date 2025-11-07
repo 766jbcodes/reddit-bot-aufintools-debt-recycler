@@ -3,7 +3,7 @@
   functions = "netlify/functions"
 
 [functions]
-  included_files = ["*.py", "requirements.txt", "**/*.py"]
+  included_files = ["*.py", "requirements.txt", "**/*.py", "**/requirements.txt"]
 
 # Python runtime configuration for the handler
 [functions."reddit-bot-handler"]
