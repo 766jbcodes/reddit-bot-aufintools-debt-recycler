@@ -1,14 +1,10 @@
 """Netlify serverless function handler for Reddit bot"""
-import sys
 import os
-
-# Add project root to path
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..'))
-sys.path.insert(0, project_root)
 
 # Set Netlify environment flag
 os.environ['NETLIFY'] = 'true'
 
+# Import from local files (copied into function directory)
 from bot import main
 
 
