@@ -41,3 +41,6 @@ Thumbs.db
 node_modules/
 package-lock.json
 
+# Scripts with sensitive data (use environment variables instead)
+set-netlify-env.ps1
+
