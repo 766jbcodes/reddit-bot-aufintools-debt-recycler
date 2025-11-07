@@ -4,9 +4,14 @@
 
 [functions]
   included_files = ["*.py", "requirements.txt", "**/*.py", "**/requirements.txt"]
+  node_bundler = "esbuild"
 
 # Python runtime configuration for the handler
 [functions."reddit-bot-handler"]
+  runtime = "python3.9"
+  
+# Also configure the .py file directly
+[functions."reddit-bot-handler.py"]
   runtime = "python3.9"
 
 # Note: reddit-bot.js is a JavaScript scheduled function that calls the Python handler via HTTP
