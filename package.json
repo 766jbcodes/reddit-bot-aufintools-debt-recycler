@@ -1,0 +1,20 @@
+{
+  "name": "reddit-debt-recycling-bot",
+  "version": "1.0.0",
+  "description": "Automated Reddit bot for debt recycling discussions",
+  "main": "bot.py",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@netlify/functions": "^2.4.0"
+  },
+  "keywords": [
+    "reddit",
+    "bot",
+    "debt-recycling"
+  ],
+  "author": "",
+  "license": "MIT"
+}
+
