@@ -13,13 +13,13 @@ Automated Reddit bot that monitors F5Bot emails for debt recycling discussions a
 
 ## Architecture
 
-- **Python Bot** (`bot.py`) - Main bot logic
-- **Netlify Function** (`netlify/functions/reddit-bot-handler/`) - Serverless handler
+- **JavaScript Bot** (`netlify/functions/reddit-bot.js`) - Main bot logic
+- **Netlify Function** - Serverless HTTP function
 - **Scheduled Execution** - External cron service calls the Netlify function every 2 hours
 
 ## Configuration
 
-Edit `config.py` to customise:
+Edit `netlify/functions/services/config.js` to customise:
 - Email query filters
 - Website URLs (calculator and learn pages)
 - AI prompts for relevance checking and response generation
@@ -47,20 +47,33 @@ Set these in Netlify (Site settings > Environment variables):
 
 ## Local Development
 
-1. Install dependencies: `pip install -r requirements.txt`
-2. Get Gmail token: `python setup_gmail_token.py`
-3. Set environment variables or modify `config.py`
-4. Run: `python bot.py`
+1. Install dependencies: `npm install`
+2. Set environment variables or modify `netlify/functions/services/config.js`
+3. Test locally: `netlify dev`
+4. Or run directly: `node netlify/functions/reddit-bot.js` (requires environment variables)
 
 ## Deployment
 
 The bot is deployed on Netlify and connected to GitHub. Pushes to `main` branch trigger automatic deployments.
 
-To set up external cron scheduling, use a service like cron-job.org to call:
-```
-https://redditbot.netlify.app/.netlify/functions/reddit-bot-handler
-```
-Schedule: `0 */2 * * *` (every 2 hours)
+### Setting Up External Cron Scheduling
+
+Since Netlify scheduled functions require a paid plan, use an external cron service:
+
+1. **Recommended: cron-job.org** (free tier available)
+   - Sign up at https://cron-job.org
+   - Create a new cron job
+   - URL: `https://redditbot.netlify.app/.netlify/functions/reddit-bot`
+   - Schedule: `0 */2 * * *` (every 2 hours)
+   - Method: GET
+
+2. **Alternative: EasyCron** (free tier available)
+   - Sign up at https://www.easycron.com
+   - Create a new cron job with the same URL and schedule
+
+3. **Manual Testing**
+   - Visit: `https://redditbot.netlify.app/.netlify/functions/reddit-bot`
+   - This will trigger the bot immediately
 
 ## Notes
 
@@ -68,3 +81,4 @@ Schedule: `0 */2 * * *` (every 2 hours)
 - All processed emails are tracked in a database to avoid duplicates
 - The bot only responds to posts determined as relevant by Gemini AI
 - Email summaries are sent after each run with execution statistics
+- The function runs on Netlify's free tier via external cron scheduling

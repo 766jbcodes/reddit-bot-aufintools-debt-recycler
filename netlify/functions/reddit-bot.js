@@ -1,5 +1,4 @@
 /** Main Reddit bot orchestration */
-const { schedule } = require('@netlify/functions');
 const GmailClient = require('./services/gmail-client');
 const F5BotEmailParser = require('./services/email-parser');
 const GeminiService = require('./services/gemini-service');
@@ -378,6 +377,7 @@ const handler = async function(event, context) {
   }
 };
 
-// Schedule to run every minute for testing (cron: * * * * *)
-// Change back to '0 */2 * * *' for every 2 hours once working
-exports.handler = schedule('* * * * *', handler);
+// Regular HTTP handler - call via external cron service
+// Use a service like cron-job.org to call: https://redditbot.netlify.app/.netlify/functions/reddit-bot
+// Recommended schedule: every 2 hours (0 */2 * * *)
+exports.handler = handler;
