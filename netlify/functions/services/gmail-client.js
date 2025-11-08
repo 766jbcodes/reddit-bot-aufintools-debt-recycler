@@ -20,16 +20,14 @@ class GmailClient {
 
   async authenticate() {
     /** Authenticate and create Gmail service */
-    let creds = null;
-
     // Check for credentials in environment variable (for Netlify)
     const credentialsJson = process.env.GMAIL_CREDENTIALS_JSON;
     const tokenJson = process.env.GMAIL_TOKEN_JSON;
 
     // Handle credentials
+    let credentialsData = null;
     if (credentialsJson) {
       // Decode base64 if needed, or use JSON directly
-      let credentialsData;
       try {
         credentialsData = JSON.parse(Buffer.from(credentialsJson, 'base64').toString('utf-8'));
       } catch (e) {
@@ -39,11 +37,15 @@ class GmailClient {
           throw new Error('Invalid GMAIL_CREDENTIALS_JSON format');
         }
       }
-
-      // Create temporary file for credentials
-      const tempCredsFile = path.join(os.tmpdir(), 'gmail_creds.json');
-      await fs.writeFile(tempCredsFile, JSON.stringify(credentialsData));
-      this.credentialsFile = tempCredsFile;
+    } else if (this.credentialsFile) {
+      try {
+        const credsContent = await fs.readFile(this.credentialsFile, 'utf-8');
+        credentialsData = JSON.parse(credsContent);
+      } catch (e) {
+        throw new Error('Failed to read credentials file');
+      }
+    } else {
+      throw new Error('Gmail credentials not found. Set GMAIL_CREDENTIALS_JSON environment variable or provide credentials.json file.');
     }
 
     // Handle token
@@ -76,18 +78,6 @@ class GmailClient {
 
     // Create OAuth2 client with credentials and token
     const { OAuth2Client } = require('google-auth-library');
-    let credentialsData = null;
-    
-    if (this.credentialsFile) {
-      try {
-        const credsContent = await fs.readFile(this.credentialsFile, 'utf-8');
-        credentialsData = JSON.parse(credsContent);
-      } catch (e) {
-        throw new Error('Failed to read credentials file');
-      }
-    } else {
-      throw new Error('Gmail credentials file required');
-    }
 
     // Extract client_id and client_secret from credentials
     const clientId = credentialsData.installed?.client_id || credentialsData.web?.client_id || credentialsData.client_id;
