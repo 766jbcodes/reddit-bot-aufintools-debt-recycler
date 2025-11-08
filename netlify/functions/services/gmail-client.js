@@ -89,25 +89,54 @@ class GmailClient {
       throw new Error('Gmail credentials file required');
     }
 
+    // Extract client_id and client_secret from credentials
+    const clientId = credentialsData.installed?.client_id || credentialsData.web?.client_id || credentialsData.client_id;
+    const clientSecret = credentialsData.installed?.client_secret || credentialsData.web?.client_secret || credentialsData.client_secret;
+    const redirectUri = credentialsData.installed?.redirect_uris?.[0] || credentialsData.web?.redirect_uris?.[0] || credentialsData.redirect_uris?.[0];
+
+    if (!clientId || !clientSecret) {
+      throw new Error('Invalid credentials: missing client_id or client_secret');
+    }
+
     const oAuth2Client = new OAuth2Client(
-      credentialsData.client_id,
-      credentialsData.client_secret,
-      credentialsData.redirect_uris?.[0]
+      clientId,
+      clientSecret,
+      redirectUri
     );
 
-    // Set credentials from token
-    oAuth2Client.setCredentials(tokenData);
+    // Clean token data - only include fields needed for OAuth2Client.setCredentials
+    // Remove client_id, client_secret, token_uri if they exist in tokenData
+    const cleanTokenData = {
+      access_token: tokenData.token || tokenData.access_token,
+      refresh_token: tokenData.refresh_token,
+      expiry_date: tokenData.expiry_date || (tokenData.expiry ? new Date(tokenData.expiry).getTime() : null),
+      scope: tokenData.scopes?.join(' ') || tokenData.scope,
+      token_type: tokenData.token_type || 'Bearer'
+    };
+
+        // Set credentials from cleaned token
+    oAuth2Client.setCredentials(cleanTokenData);
 
     // Refresh token if expired
-    if (tokenData.expiry_date && tokenData.expiry_date < Date.now() && tokenData.refresh_token) {
+    const expiryDate = cleanTokenData.expiry_date;
+    if (expiryDate && expiryDate < Date.now() && cleanTokenData.refresh_token) {
       try {
+        console.log('Access token expired, refreshing...');
         const newCreds = await oAuth2Client.refreshAccessToken();
         oAuth2Client.setCredentials(newCreds.credentials);
+        console.log('Access token refreshed successfully');
         
         // Save refreshed token if we have a file path (local development)
         if (this.tokenFile && !process.env.NETLIFY) {
           await fs.writeFile(this.tokenFile, JSON.stringify(newCreds.credentials));
         }
+        
+        // Note: In Netlify, we can't update environment variables at runtime
+        // The refreshed token will be used for this execution, but the env var
+        // will still contain the old token. This is fine because:
+        // 1. The refresh_token doesn't change
+        // 2. The next execution will refresh again if needed
+        // 3. The refresh_token is what matters for long-term access
       } catch (error) {
         throw new Error(`Failed to refresh token: ${error.message}`);
       }
