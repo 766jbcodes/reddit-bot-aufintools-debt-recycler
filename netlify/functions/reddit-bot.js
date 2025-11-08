@@ -66,9 +66,12 @@ async function main() {
     // Send summary email even if no emails
     try {
       const stats = tracker.getStats();
+      console.log(`Sending summary email (no emails found). Stats: ${JSON.stringify(stats)}`);
       await sendSummaryEmail(gmail, 0, 0, 0, [], [], stats);
+      console.log('Summary email sent successfully');
     } catch (error) {
       console.error(`Error sending summary email: ${error.message}`);
+      console.error(`Error stack: ${error.stack}`);
     }
     tracker.close();
     return;
@@ -201,9 +204,12 @@ async function main() {
 
   // Send summary email
   try {
+    console.log(`Sending summary email. Processed: ${processedCount}, Relevant: ${relevantCount}, Posted: ${postedCount}`);
     await sendSummaryEmail(gmail, processedCount, relevantCount, postedCount, postedComments, errors, stats);
+    console.log('Summary email sent successfully');
   } catch (error) {
     console.error(`Error sending summary email: ${error.message}`);
+    console.error(`Error stack: ${error.stack}`);
   }
 
   tracker.close();
@@ -211,16 +217,22 @@ async function main() {
 
 async function sendSummaryEmail(gmail, processedCount, relevantCount, postedCount, postedComments, errors, stats) {
   /** Send a summary email after bot execution */
+  console.log('sendSummaryEmail called');
   // Get recipient email
   let recipient = SUMMARY_EMAIL;
+  console.log(`SUMMARY_EMAIL from config: ${SUMMARY_EMAIL || 'not set'}`);
   if (!recipient) {
+    console.log('Getting user email from Gmail...');
     recipient = await gmail.getUserEmail();
+    console.log(`Got user email: ${recipient || 'none'}`);
   }
 
   if (!recipient) {
-    console.log('No email address available for summary');
+    console.error('No email address available for summary - SUMMARY_EMAIL not set and getUserEmail() returned empty');
     return;
   }
+
+  console.log(`Sending summary email to: ${recipient}`);
 
   // Create email subject
   const now = new Date();
@@ -336,11 +348,15 @@ ${'='.repeat(60)}
 `;
 
   // Send email
+  console.log(`Attempting to send email to: ${recipient}`);
+  console.log(`Subject: ${subject}`);
   const result = await gmail.sendEmail(recipient, subject, bodyText, bodyHtml);
   if (result.success) {
-    console.log(`[OK] Summary email sent to ${recipient}`);
+    console.log(`[OK] Summary email sent successfully to ${recipient}`);
+    console.log(`Message ID: ${result.message_id}`);
   } else {
-    console.error(`[ERROR] Failed to send summary email: ${result.error || 'Unknown error'}`);
+    console.error(`[ERROR] Failed to send summary email to ${recipient}`);
+    console.error(`Error: ${result.error || 'Unknown error'}`);
   }
 }
 
