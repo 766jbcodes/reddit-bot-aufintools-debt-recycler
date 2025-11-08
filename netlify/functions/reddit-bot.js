@@ -378,6 +378,6 @@ const handler = async function(event, context) {
   }
 };
 
-// Schedule to run every 2 hours (cron: 0 */2 * * *)
-// Change to '* * * * *' for every minute for testing
-exports.handler = schedule('0 */2 * * *', handler);
+// Schedule to run every minute for testing (cron: * * * * *)
+// Change back to '0 */2 * * *' for every 2 hours once working
+exports.handler = schedule('* * * * *', handler);
