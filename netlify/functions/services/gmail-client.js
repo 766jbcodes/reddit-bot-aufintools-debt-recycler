@@ -114,7 +114,7 @@ class GmailClient {
       token_type: tokenData.token_type || 'Bearer'
     };
 
-        // Set credentials from cleaned token
+    // Set credentials from cleaned token
     oAuth2Client.setCredentials(cleanTokenData);
 
     // Refresh token if expired
