@@ -374,6 +374,22 @@ const handler = async function(event, context) {
   console.log('Event:', JSON.stringify(event, null, 2));
 
   try {
+    // Check if we should clear the database
+    const queryParams = event.queryStringParameters || {};
+    if (queryParams.clear === 'true' || queryParams.clear === '1') {
+      console.log('Clearing processed emails database...');
+      const tracker = new EmailTracker(DB_PATH);
+      const deletedCount = tracker.clearAll();
+      tracker.close();
+      console.log(`Cleared ${deletedCount} processed email records`);
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: `Database cleared successfully. Deleted ${deletedCount} records.`
+        })
+      };
+    }
+
     await main();
     return {
       statusCode: 200,
