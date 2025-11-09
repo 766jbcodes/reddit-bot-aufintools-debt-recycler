@@ -60,6 +60,13 @@ class EmailTracker {
     };
   }
 
+  clearAll() {
+    /** Clear all processed email records */
+    const stmt = this.db.prepare('DELETE FROM processed_emails');
+    const result = stmt.run();
+    return result.changes;
+  }
+
   close() {
     /** Close the database connection */
     if (this.db) {
