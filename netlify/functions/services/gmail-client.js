@@ -137,8 +137,8 @@ class GmailClient {
     return this.service;
   }
 
-  async getUnreadEmails(query) {
-    /** Fetch unread emails matching the query */
+  async getEmails(query) {
+    /** Fetch emails matching the query */
     if (!this.service) {
       await this.authenticate();
     }

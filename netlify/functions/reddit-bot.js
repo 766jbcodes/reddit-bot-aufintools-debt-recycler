@@ -56,10 +56,10 @@ async function main() {
   const tracker = new EmailTracker(DB_PATH);
   const parser = F5BotEmailParser;
 
-  // Fetch unread emails
+  // Fetch emails
   console.log(`Fetching emails with query: ${GMAIL_QUERY}`);
-  const emails = await gmail.getUnreadEmails(GMAIL_QUERY);
-  console.log(`Found ${emails.length} unread emails`);
+  const emails = await gmail.getEmails(GMAIL_QUERY);
+  console.log(`Found ${emails.length} emails`);
 
   if (emails.length === 0) {
     console.log('No new emails to process');
@@ -183,8 +183,7 @@ async function main() {
       );
     }
 
-    // Mark email as read in Gmail
-    await gmail.markAsRead(emailId);
+    // Email will remain as read (inbox already marks them as read)
     processedCount++;
   }
 
