@@ -96,11 +96,24 @@ async function main() {
     const emailBody = gmail.getEmailBody(emailMsg);
     const emailSubject = emailMsg.payload?.headers?.find(h => h.name === 'Subject')?.value || 'No Subject';
 
+    // Debug: Log email body preview for troubleshooting
+    console.log(`\n[DEBUG] Email ID: ${emailId}`);
+    console.log(`[DEBUG] Subject: ${emailSubject}`);
+    console.log(`[DEBUG] Body preview (first 500 chars): ${emailBody.substring(0, 500)}`);
+    console.log(`[DEBUG] Body length: ${emailBody.length} chars`);
+
     // Parse email to extract Reddit info
     const redditInfo = parser.parseEmail(emailBody, emailSubject);
 
     if (!redditInfo) {
-      console.log(`Could not parse Reddit info from email: ${emailId}`);
+      console.log(`[ERROR] Could not parse Reddit info from email: ${emailId}`);
+      console.log(`[DEBUG] Searching for F5Bot URL pattern...`);
+      const f5botMatch = emailBody.match(/https:\/\/f5bot\.com\/url\?u=([^&\s]+)/);
+      const redditMatch = emailBody.match(/https?:\/\/(?:www\.)?reddit\.com\/r\/\w+\/comments\/[^\s\)]+/);
+      console.log(`[DEBUG] F5Bot URL found: ${f5botMatch ? 'YES' : 'NO'}`);
+      console.log(`[DEBUG] Direct Reddit URL found: ${redditMatch ? 'YES' : 'NO'}`);
+      if (f5botMatch) console.log(`[DEBUG] F5Bot URL: ${f5botMatch[0]}`);
+      if (redditMatch) console.log(`[DEBUG] Reddit URL: ${redditMatch[0]}`);
       tracker.markProcessed(emailId, '', '', null, false);
       continue;
     }
