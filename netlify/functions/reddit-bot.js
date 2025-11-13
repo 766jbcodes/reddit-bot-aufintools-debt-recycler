@@ -119,11 +119,13 @@ async function main() {
     }
 
     console.log(`\nProcessing: ${redditInfo.url}`);
-    console.log(`Content preview: ${redditInfo.content.substring(0, 100)}...`);
+    console.log(`Content preview: ${redditInfo.content.substring(0, 200)}...`);
+    console.log(`Content length: ${redditInfo.content.length} chars`);
 
     // Check relevance
     const relevanceResult = await gemini.checkRelevance(redditInfo.content);
     console.log(`Relevance: ${relevanceResult.relevant} - ${relevanceResult.explanation}`);
+    console.log(`Full relevance response: ${JSON.stringify(relevanceResult)}`);
 
     if (!relevanceResult.relevant) {
       tracker.markProcessed(

@@ -215,12 +215,133 @@ class F5BotEmailParser {
 
     // F5Bot emails have a specific format
     // They include the post title and comment text
+    // The comment text is often in a monospace span in HTML, or appears after the URL in plain text
 
-    // Try to extract the comment text that comes after the title
-    // Pattern: Title line, then URL, then the actual comment text
-    // The comment text appears after the F5Bot URL and before "Do you have comments"
+    // First, try to extract the comment text that appears after "Reddit Comment" or similar
+    // Look for text between the URL and the footer
+    const bodyToSearch = decodedBody.length > emailBody.length ? decodedBody : emailBody;
 
-    // Find the F5Bot URL (try multiple patterns)
+    // Pattern 1: Look for the actual comment text
+    // In F5Bot emails, the comment text often:
+    // - Starts with common sentence starters
+    // - Contains substantial content (multiple sentences)
+    // - Appears after the URL or "Reddit Comment" text
+    // - Is usually 100+ characters
+    
+    // Try multiple patterns to find substantial content
+    // Priority: Look for content that mentions debt recycling or financial terms first
+    const financialTerms = ['debt recycling', 'borrow to invest', 'loan', 'redraw', 'investment', 'ETF', 'tax deduct', 'equity', 'leveraged'];
+    const contentPatterns = [
+      // Pattern: Find text mentioning financial/debt recycling terms (highest priority)
+      new RegExp(`(?:If you|When you|You can|This is|It is|I|We|They|The|In terms|Should aim)[^.!?]*(?:${financialTerms.join('|')})[^.!?]{20,400}[.!?]`, 'i'),
+      // Pattern: Find text that starts with common phrases and is substantial
+      /(?:If you|When you|You can|This is|It is|I think|I believe|We|They|The|In terms|Should aim)[^.!?]{30,600}[.!?]/i,
+      // Pattern: Find any substantial paragraph (100+ chars between periods)
+      /[A-Z][^.!?]{100,600}[.!?]/,
+      // Pattern: Look for text after URL that's substantial
+      /f5bot\.com[^\n]*\n\s*([A-Z][^.!?]{50,600}[.!?])/i
+    ];
+    
+    let substantialMatch = null;
+    for (const pattern of contentPatterns) {
+      substantialMatch = bodyToSearch.match(pattern);
+      if (substantialMatch) {
+        // Use the first capture group if available, otherwise use the full match
+        substantialMatch = substantialMatch[1] || substantialMatch[0];
+        break;
+      }
+    }
+    
+    if (substantialMatch) {
+      let potentialContent = (typeof substantialMatch === 'string' ? substantialMatch : substantialMatch[0] || substantialMatch).trim();
+      // Remove footer patterns
+      const footerPatterns = [
+        /Do you have comments.*/is,
+        /RedPulse\.io.*/is,
+        /Want to advertise.*/is,
+        /You are receiving.*/is,
+        /IMPROVE YOUR AI SEARCH.*/is,
+        /LaunchClub\.ai.*/is,
+        /40% of citations.*/is
+      ];
+      
+      for (const pattern of footerPatterns) {
+        potentialContent = potentialContent.replace(pattern, '');
+      }
+      
+      potentialContent = potentialContent.trim();
+      if (potentialContent.length > 50) {
+        // Get title if available
+        const titlePatterns = [
+          /Reddit Comments[^:]*:\s*['"]([^'"]+)['"]/,
+          /Reddit Comments[^:]*:\s*([^\n]+)/
+        ];
+        
+        let title = null;
+        for (const pattern of titlePatterns) {
+          const titleMatch = bodyToSearch.match(pattern);
+          if (titleMatch) {
+            title = titleMatch[1].trim();
+            break;
+          }
+        }
+        
+        if (title && !potentialContent.toLowerCase().includes(title.toLowerCase())) {
+          return `${title}\n\n${potentialContent}`;
+        }
+        return potentialContent;
+      }
+    }
+    
+    // Pattern 2: Look for text after "Reddit Comment" link and before footer
+    // The comment text often appears right after the link
+    const commentAfterLinkPattern = /(?:Reddit Comment|reddit\.com)[^\n]*\n\s*([^\n]+(?:\n[^\n]+){0,10})/i;
+    const commentMatch = bodyToSearch.match(commentAfterLinkPattern);
+    
+    if (commentMatch && commentMatch[1]) {
+      let potentialContent = commentMatch[1].trim();
+      // Remove footer patterns
+      const footerPatterns = [
+        /Do you have comments.*/is,
+        /RedPulse\.io.*/is,
+        /Want to advertise.*/is,
+        /You are receiving.*/is,
+        /IMPROVE YOUR AI SEARCH.*/is,
+        /LaunchClub\.ai.*/is,
+        /Want to advertise.*/is
+      ];
+      
+      for (const pattern of footerPatterns) {
+        potentialContent = potentialContent.replace(pattern, '');
+      }
+      
+      // Clean up and check if it's substantial content
+      potentialContent = potentialContent.trim();
+      if (potentialContent.length > 50 && !potentialContent.match(/^(https?:\/\/|www\.)/i)) {
+        // This looks like actual content, not a URL
+        // Also try to get the title
+        const titlePatterns = [
+          /Reddit Comments[^:]*:\s*['"]([^'"]+)['"]/,
+          /Reddit Comments[^:]*:\s*([^\n]+)/
+        ];
+        
+        let title = null;
+        for (const pattern of titlePatterns) {
+          const titleMatch = bodyToSearch.match(pattern);
+          if (titleMatch) {
+            title = titleMatch[1].trim();
+            break;
+          }
+        }
+        
+        if (title && !potentialContent.toLowerCase().includes(title.toLowerCase())) {
+          return `${title}\n\n${potentialContent}`;
+        }
+        return potentialContent;
+      }
+    }
+
+    // Pattern 2: Find the F5Bot URL and extract text after it
     const f5botUrlPatterns = [
       /https:\/\/f5bot\.com\/url\?u=[^\s\)]+/,
       /f5bot\.com\/url\?u=[^\s\)]+/
@@ -228,7 +349,7 @@ class F5BotEmailParser {
     
     let urlMatch = null;
     for (const pattern of f5botUrlPatterns) {
-      urlMatch = decodedBody.match(pattern) || emailBody.match(pattern);
+      urlMatch = bodyToSearch.match(pattern);
       if (urlMatch) break;
     }
 
@@ -245,8 +366,7 @@ class F5BotEmailParser {
         /LaunchClub\.ai.*/is
       ];
 
-      // Extract text after URL (use decoded body if available)
-      const bodyToSearch = decodedBody.length > emailBody.length ? decodedBody : emailBody;
+      // Extract text after URL
       let textAfterUrl = bodyToSearch.substring(urlEnd, urlEnd + 2000);
 
       // Remove footer content
@@ -256,6 +376,11 @@ class F5BotEmailParser {
 
       // Clean up whitespace and get the actual comment
       let content = textAfterUrl.trim();
+      
+      // Remove any remaining URLs or email addresses
+      content = content.replace(/https?:\/\/[^\s]+/g, '');
+      content = content.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '');
+      content = content.trim();
 
       // Also try to get the post title
       const titlePatterns = [
